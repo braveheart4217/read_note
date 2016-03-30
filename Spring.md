@@ -454,7 +454,80 @@
 				3. 前一种兄弟模式，`spring` 会使用JDK的 `java.lang.reflect.Proxy` 类，它允许`Spring`动态生成一个新类来实现必要的接口，织入通知，并且把对这些接口的任何调用都转发到目标类
 				4. 后一种父子模式，`spring`使用 `CGLIB` 库生成目标类的一个子类，在创建这个子类的时候，spring织入通知，并且把对这个子类的调用委托到目标类
 
+		3. 基于 XML 配置的 AOP 示例
+
+				<aop:config>
+				   <aop:aspect id="myAspect" ref="aBean">  // aspect 定义一个切面
+				      <aop:pointcut id="businessService"  // point 定义一个切入点
+
+						 // execution 指明绑定的方法
+				         expression="execution(* com.xyz.myapp.service.*.*(..))"/>
+
+				      // aop:bofore 指明 函数调用前 接入点
+				      <aop:before pointcut-ref="businessService" 
+				         method="doRequiredTask"/>
+
+				      // 理解同上
+				      <aop:after pointcut-ref="businessService" 
+				         method="doRequiredTask"/>
+				      
+				      // The doRequiredTask method must have parameter named retVal
+				      <aop:after-returning pointcut-ref="businessService"
+				         returning="retVal"
+				         method="doRequiredTask"/>
+				   
+				      // The doRequiredTask method must have parameter named ex
+				      <aop:after-throwing pointcut-ref="businessService"
+				         throwing="ex"
+				         method="doRequiredTask"/>
+				      
+				      <aop:around pointcut-ref="businessService" 
+				         method="doRequiredTask"/>
+				   ...
+				   </aop:aspect>
+				</aop:config>
+				<bean id="aBean" class="...">
+				...
+				</bean>
+			* 需要注意的是
+				* 如果在 XML 里面配置的话需要引入 spring-aopj 架构
+						
+						xmlns:aop="http://www.springframework.org/schema/aop"
+				* 如果你使用 `Maven` 构建项目的话还需要导入 `org.springframework.spring-aspects`依赖
+
+		4. 基于注解的 `Aop` 架构
+			* 请参见 `testSprig.com.aop` 包
+			* 打开 注解支持（如果使用 XML 配置 Bean）
+			
+					<aop:aspectj-autoproxy/>
+			* 我在使用 `@Configuration` 注解配置 `Bean` 的时候不能正确运行程序估计就是 `aspectj-autoproxy` 没打开
+		，经过我的尝试之后发现在配置类加上注解 `@EnableAspectJAutoProxy` 之后就可以了
+
+
+	1. JDBC 框架
+		* 参见下面的 `JDBC` 链接[^1]
+		* Spring 事务 与 存储过程 暂时用不到，先不了解
+
+	18. `Web MVC` 框架
+		1. MVC 模式导致了应用程序的不同方面(输入逻辑、业务逻辑和 UI 逻辑)的分离，同时提供了在这些元素之间的松散耦合
+			* 模型封装了应用程序数据，并且通常它们由 `POJO` 组成
+			* 视图主要用于呈现模型数据，并且通常它生成客户端的浏览器可以解释的 `HTML` 输出
+			* 控制器主要用于处理用户请求，并且构建合适的模型并将其传递到视图呈现
+
+		2. `DispatchServlet`
+			1. `DispatchServlet`处理请求的工作流程
+				![工作流程](http://wiki.jikexueyuan.com/project/spring/images/mvc1.png)
+			2. 过程介绍
+				* 收到一个 HTTP 请求后，`DispatcherServlet` 根据 `HandlerMapping` 来选择并且调用适当的控制器
+				* 控制器接受请求，并基于使用的 `GET` 或 `POST` 方法来调用适当的 `service` 方法。`Service` 方法将设置基于定义的业务逻辑的模型数据，并返回视图名称到 `DispatcherServlet` 中
+				* `DispatcherServlet` 会从 `ViewResolver` 获取帮助，为请求检取定义视图
+				* 一旦确定视图，`DispatcherServlet` 将把模型数据传递给视图，最后呈现在浏览器中
+			3. 上面所提到的所有组件，即 `HandlerMapping`、`Controller` 和 `ViewResolver` 是 `WebApplicationContext` 的一部分，而 `WebApplicationContext` 是带有一些对 web 应用程序必要的额外特性的 `ApplicationContext` 的扩展
+
+
 参考资料：
 
 1. [详解 Spring 3.0 基于 Annotation 的依赖注入实现](http://www.ibm.com/developerworks/cn/opensource/os-cn-spring-iocannt/) 
 2. [Spring 参考手册](http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#beans-autowired-annotation)
+
+[^1]:[Spring JDBC参考手册](https://docs.spring.io/spring-framework/docs/current/spring-framework-reference/html/jdbc.html)

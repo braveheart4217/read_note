@@ -233,6 +233,10 @@ maven提供的控制可传递依赖的程度的功能：
 
 ## Syntax Of POM
 
+依赖范围：
+	
+* maven在编译项目主代码的时候需要使用一套 classpath ，在编译和执行测试的时候也需要一套 classpath ，在最后实际运行maven项目的时候classpath又不一样，依赖范围(scope)就是来控制依赖与这三种classpath（编译 classpath ，测试classpath，运行classpath）的关系，具体的scope见下面
+
 Dependency Scope
 
 1. Compile
@@ -256,10 +260,11 @@ Dependency Scope
 4. test
 	> 表示dependency作用在测试时，不作用在运行时。 只在测试时使用，用于编译和运行测试代码。不会随项目发布。
 5. system
-	> 跟provided 相似，但是在系统中要以外部JAR包的形式提供，maven不会在repository查找它。
+	> 跟provided 相似，但是在系统中要以外部JAR包的形式提供，maven不会在repository查找它(必须指定 `systemPath` 属性)。
+6. import
+	> 导入依赖范围，该依赖范围不会对三种 `classpath` 产生实际影响
  
-
-
+##################################
 
 [Maven中的基本概念](http://blog.csdn.net/onlyqi/article/details/6801318)
 
