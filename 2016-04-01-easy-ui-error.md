@@ -1,3 +1,8 @@
+---
+layout: default
+title: Easy-ui Cannot read property 'length' of undefined 的错误
+---
+
 关于 Easy-ui 的错误:
 	
 	Uncaught TypeError: Cannot read property 'length' of undefined

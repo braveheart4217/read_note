@@ -232,7 +232,7 @@
 						      <artifactId>maven-clean-plugin</artifactId>
 						    </plugin>
 					5. 总结
-						* 当 `maven` 解析到如 `dependency:tree` 这样的命令之后，他首先基于默认 `groupId` 与 用户自定义的 `groupId` 归并所有插件仓库的元数据（可能有多个插件仓库都有含有某个 groupId 的元数据），然后检查归并后的元数据，早到对应的 `artifactId`( `maven-dependency-plugins` )，然后结合当前元数据的 `groupId` (`org.apache.maven.plugins`)，最后使用上述的解析版本的方法解析到 `version` ，于是就得到了完整的插件坐标。
+						* 当 `maven` 解析到如 `dependency:tree` 这样的命令之后，他首先基于默认 `groupId` 与 用户自定义的 `groupId` (请注意这里的groupId是插件的groupId)归并所有插件仓库的元数据（可能有多个插件仓库都有含有某个 groupId 的元数据），然后检查归并后的元数据，早到对应的 `artifactId`( `maven-dependency-plugins` )，然后结合当前元数据的 `groupId` (`org.apache.maven.plugins`)，最后使用上述的解析版本的方法解析到 `version` ，于是就得到了完整的插件坐标。
 						* 如果在检查完所有的 `groupId` 之后都没找到插件就会报错
 
 		1. 项目的聚合与继承
@@ -314,3 +314,171 @@
 			3. 但是还是会存在一个问题就是,maven 属性（如 ${db.username}）只会在 POM 文件中才会被解析成对应的值（dev），当被放到 src/main/resources/ 目录下的文件时，便还会是 ${db.username}，需要解决这个问题就要让插件能够解析资源文件中的 maven 属性，即开启资源过滤
 
 					<filtering>true</filtering> // 开启资源过滤
+		2. 激活 profile
+			1. 命令行激活
+
+					mvn install -Pdev // -P 跟需要激活的profile名称，多个profile以逗号隔开
+			2. settins 文件显示激活
+				1. 应用场景：希望某个 profile 默认一直处于激活状态
+				2. 配置 `settings.xml` 文件中的 `activeProfile` 元素
+
+						<activeProfiles>
+							<activeProfile> profile 名 </activeProfile>
+						</activeProfiles>
+		3. 系统属性激活
+			1. 用户可以配置当某个系统属性存在时激活某个 profile
+
+					// 当存在系统属性 test 时，激活此 profile
+					<profiles>
+						<profile>
+						    ...
+							profile 其他属性
+							...
+							<activation>
+								<property>
+									<name>test</name>
+									// 这句表示当系统属性 test=x 时激活此 profile
+									// <value>x</value>
+								</property>
+							</activation>
+						</profile>
+					</profiles>
+
+					// 当需要指定系统属性的值得时候可以这样做
+					mvn install -Dtest=x
+			4. 根据操作系统环境激活
+				1. 通过配置 <activation> 元素下 <os> 元素
+
+			5. 文件存在与否激活
+
+					<activation>
+						<file>
+							<missing>x.properties</missing>
+							<exists>y.properties</exists>
+						<file>
+					</activation>
+			6. 默认激活
+				1. 通过定义 profile 的时候添加元素 <activeBydefault> 为 true，来指定 profile，自动激活
+				2. 但是如果 POM 中有任何一个 profile 通过以上方式被激活，默认激活配置都会失效
+
+			7. 了解当前激活的 profile
+
+					mvn help:active-profiles
+			6. 列出当前所以的 profile
+
+					mvn help:all-profiles
+	3. profile 的种类
+		1. pom.xml
+			* pom.xml 中声明的 profile 仅仅对当期项目有效
+		2. 用户 settings.xml
+			* ${user}/.m2/settings.xml 中的 profile 对该用户的所有 maven 项目有效
+		3. 全局 settings.xml
+			* MAVEN_HOME/conf/settings.xml 对本机所有 maven 项目有效
+		4. profiles.xml
+			* 特性已经移除，不再使用
+		5. 各种 profile 可以声明的元素，因为只有 pom 中的 profile 能够随项目一起发布
+			1. 在 pom.xml 中
+
+					<project>  
+					    <repositories></repositories>  
+					    <pluginRepositories></pluginRepositories>  
+					    <distributionManagement></distributionManagement>  
+					    <dependencies></dependencies>  
+					    <dependencyManagement></dependencyManagement>  
+					    <modules></modules>  
+					    <properties></properties>  
+					    <reporting></reporting>  
+					    <build>  
+					        <plugins></plugins>  
+					        <defaultGoal></defaultGoal>  
+					        <resources></resources>  
+					        <testResources></testResources>  
+					        <finalName></finalName>  
+					    </build>  
+					</project>
+			2. 在其他 profile 中
+			
+					<project>  
+					    <repositories></repositories>  
+					    <pluginRepositories></pluginRepositories>  
+					    <properties></properties>  
+					</project>
+	4. web 资源过滤
+	5. 在 profile 里面激活集成测试
+
+1. 编写 maven 插件
+2. 编写 Archetype
+	1. Archetype 项目内容
+		1. pom.xml  // Archetype 自生的 POM
+			1. 需要指定 packaging 类型为 POM，不然编译会出错
+		2. src/main/resources/archetype-resources/pom.xml  // 基于该 Archetype 生成的项目的POM原型
+		3. src/main/resources/META-INF/maven/archetype-metadata.xml // Archetype 的描述文件
+			1. 声明那些目录及文件应该包含在 Archetype 中
+			2. 这个 Archetype 包含的属性参数
+		4. src/main/resources/archetype-resources/ ** 
+	2. 实例
+
+			<?xml version="1.0" encoding="UTF-8"?>
+			<archetype-descriptor name="sample">
+				<fileSets>
+					<fileSet filtered="true" packaged="true">
+						<directory>src/main/java</directory>
+						<includes>
+							<include>**/*.java</include>
+						</includes>
+					</fileSet>
+					<fileSet filtered="true" packaged="true">
+						<directory>src/test/java</directory>
+						<includes>
+							<include>**/*.java</include>
+						</includes>
+					</fileSet>
+					<fileSet filtered="true" packaged="false">
+						<directory>src/main/resources</directory>
+						<includes>
+							<include>**/*.properties</include>
+						</includes>
+					</fileSet>
+				</fileSets>
+				<requiredProperties>
+					<requiredProperty key="port" />
+					<requiredProperty key="groupId">
+						<defaultValue>com.juvenxu.mvnbook</defaultValue>
+					</requiredProperty>
+				</requiredProperties>
+			</archetype-descriptor>
+		1. fileSet 表示一个目录
+			1. filterd 属性表示是否对该文件集合 应用属性替换
+			2. packaged 属性表示是否将给路径下的内容放到生成项目的包路径下
+				1. 就是如果 package=true，directory=x，输入的 package=y，那么 x 目录下的全部文件会被复制到 y 目录下
+		2. 注意 在需要使用我们定义的 archetype 创建工程的时候必须先 install 当前工程，不然执行命令会出错
+	2. Archetype Catalog
+		1. 当用户不指定 `Archetype` 坐标的方式使用 Archetype 插件的时候，会得到一个 `Archetype` 列表供选择，这个列表信息来自于 `archetype-catalog.xml` 的文件，现在我们来把我们自定义的 `archetype` 加入到此列表中
+		2. Archetype Catalog 的来源
+			1. internal : archetype 插件内置的 Archetype Catalog
+			2. local : 用户本地的 Archetype Catalog，其路径为 ~/.m2/archetype-catalog.xml  //该文件默认不存在
+			3. remote : maven 中央仓库的 Archetype Catalog
+			4. file : //... 用户可以指定本地任何地方的 archetype-catalog.xml 文件
+			5. http : //... 使用http协议指定远程的 archetype-catalog.xml 文件
+
+					// 使用 archetypeCatalog 选项指定 archetype-catalog 文件路径
+					// 当需要指定多个 archetype-catalog 文件来源的时候用 , 分隔
+					mvn archetype:generate -DarchetypeCatalog=file:// /tem/archetype-catalog.xml,local,remote
+
+1. POM 元素参考
+	1. `<parent>`
+	2. `<modules>`
+	3. `<packaging>`
+	4. `<description>`
+	5. `<scm>`
+	6. `<prerequisites> < maven>`   // maven 版本最低要求
+	7. `<build> <filters> <filter>` //通过 properties 文件定义资源过滤属性
+	8. `<build> <extensions> <extension>` // 拓展 maven 的核心
+	9. `<build> <pluginManagement>` // 插件管理
+	10. `<dependencyManagement>` // 依赖管理
+	10. `<build> <plugins> <plugin>`  // 插件
+	11. `<profiles> <profile>` // POM profile
+	12. `<distributionManagement> <repository>`
+	13. `<repositorys> <repository>` // 仓库
+	14. `<pluginRepositories> <pluginRepository>` // 插件仓库
+	15. `<properties>` // maven 属性
